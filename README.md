@@ -1,84 +1,137 @@
-# wd10const todoList = () => {
-  all = []
-  const add = (todoItem) => {
-    all.push(todoItem)
-  }
-  const markAsComplete = (index) => {
-    all[index].completed = true
-  }
+//  listTodos.js
+const db = require("./models/index");
 
-  const overdue = () => {
-    // Write the date check condition here and return the array
-    // of overdue items accordingly.
+const listTodo = async () => {
+  try {
+    await db.Todo.showList();
+  } catch (error) {
+    console.error(error);
   }
+};
+(async () => {
+  await listTodo();
+})();
+My Todo-list
 
-  const dueToday = () => {
-    // Write the date check condition here and return the array
-    // of todo items that are due today accordingly.
+Overdue
+24. [ ] Submit assignment 2022-07-10
+
+Due Today
+25. [x] Pay rent
+28. [ ] Service vehicle
+
+Due Later
+26. [ ] File taxes 2022-07-14
+27. [ ] Call Acme Corp. 2022-07-14
+// models/todo.js
+'use strict';
+const {
+  Model
+} = require('sequelize');
+module.exports = (sequelize, DataTypes) => {
+  class Todo extends Model {
+    /**
+     * Helper method for defining associations.
+     * This method is not a part of Sequelize lifecycle.
+     * The `models/index` file will call this method automatically.
+     */
+    static async addTask(params) {
+      return await Todo.create(params);
+    }
+    static async showList() {
+      console.log("My Todo list \n");
+
+      console.log("Overdue");
+      // FILL IN HERE
+      console.log("\n");
+
+      console.log("Due Today");
+      // FILL IN HERE
+      console.log("\n");
+
+      console.log("Due Later");
+      // FILL IN HERE
+    }
+
+    static async overdue() {
+      // FILL IN HERE TO RETURN OVERDUE ITEMS
+    }
+
+    static async dueToday() {
+      // FILL IN HERE TO RETURN ITEMS DUE tODAY
+    }
+
+    static async dueLater() {
+      // FILL IN HERE TO RETURN ITEMS DUE LATER
+    }
+
+    static async markAsComplete(id) {
+      // FILL IN HERE TO MARK AN ITEM AS COMPLETE
+
+    }
+
+    displayableString() {
+      let checkbox = this.completed ? "[x]" : "[ ]";
+      return `${this.id}. ${checkbox} ${this.title} ${this.dueDate}`;
+    }
   }
+  Todo.init({
+    title: DataTypes.STRING,
+    dueDate: DataTypes.DATEONLY,
+    completed: DataTypes.BOOLEAN
+  }, {
+    sequelize,
+    modelName: 'Todo',
+  });
+  return Todo;
+};
+// addTodo.js
+var argv = require('minimist')(process.argv.slice(2));
+const db = require("./models/index")
 
-  const dueLater = () => {
-    // Write the date check condition here and return the array
-    // of todo items that are due later accordingly.
+const createTodo = async (params) => {
+  try {
+    await db.Todo.addTask(params);
+  } catch (error) {
+    console.error(error);
   }
-
-  const toDisplayableList = (list) => {
-    // Format the To-Do list here, and return the output string
-    // as per the format given above.
-  }
-
-  return {
-    all,
-    add,
-    markAsComplete,
-    overdue,
-    dueToday,
-    dueLater,
-    toDisplayableList
-  };
 };
 
-// ####################################### #
-// DO NOT CHANGE ANYTHING BELOW THIS LINE. #
-// ####################################### #
-
-const todos = todoList();
-
-const formattedDate = d => {
-  return d.toISOString().split("T")[0]
+const getJSDate = (days) => {
+  if (!Number.isInteger(days)) {
+    throw new Error("Need to pass an integer as days");
+  }
+  const today = new Date();
+  const oneDay = 60 * 60 * 24 * 1000;
+  return new Date(today.getTime() + days * oneDay)
 }
+(async () => {
+  const { title, dueInDays } = argv;
+  if (!title || dueInDays === undefined) {
+    throw new Error("title and dueInDays are required. \nSample command: node addTodo.js --title=\"Buy milk\" --dueInDays=-2 ")
+  }
+  await createTodo({ title, dueDate: getJSDate(dueInDays), completed: false })
+  await db.Todo.showList();
+})();
+// completeTodo.js
+var argv = require('minimist')(process.argv.slice(2));
+const db = require("./models/index");
+const markAsComplete = async (id) => {
+  try {
+    await db.Todo.markAsComplete(id);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
-var dateToday = new Date()
-const today = formattedDate(dateToday)
-const yesterday = formattedDate(
-  new Date(new Date().setDate(dateToday.getDate() - 1))
-)
-const tomorrow = formattedDate(
-  new Date(new Date().setDate(dateToday.getDate() + 1))
-)
-
-todos.add({ title: 'Submit assignment', dueDate: yesterday, completed: false })
-todos.add({ title: 'Pay rent', dueDate: today, completed: true })
-todos.add({ title: 'Service Vehicle', dueDate: today, completed: false })
-todos.add({ title: 'File taxes', dueDate: tomorrow, completed: false })
-todos.add({ title: 'Pay electric bill', dueDate: tomorrow, completed: false })
-
-console.log("My Todo-list\n")
-
-console.log("Overdue")
-var overdues = todos.overdue()
-var formattedOverdues = todos.toDisplayableList(overdues)
-console.log(formattedOverdues)
-console.log("\n")
-
-console.log("Due Today")
-let itemsDueToday = todos.dueToday()
-let formattedItemsDueToday = todos.toDisplayableList(itemsDueToday)
-console.log(formattedItemsDueToday)
-console.log("\n")
-
-console.log("Due Later")
-let itemsDueLater = todos.dueLater()
-let formattedItemsDueLater = todos.toDisplayableList(itemsDueLater)
-console.log(formattedItemsDueLater)
-console.log("\n\n")
+(async () => {
+  const { id } = argv;
+  if(!id) {
+    throw new Error("Need to pass an id");
+  }
+  if(!Number.isInteger(id)) {
+    throw new Error("The id needs to be an integer")
+  }
+  await markAsComplete(id);
+  await db.Todo.showList();
+})();
